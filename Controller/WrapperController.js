@@ -2,8 +2,10 @@ import axios from "axios";
 import dotenv from "dotenv"
 import { MongoClient, ObjectId } from 'mongodb';
 import twilio from 'twilio';
+import OpenAI from 'openai';
 dotenv.config();
 const mongoUrl = process.env.MONGO_URL;
+
 
 
 const api_key = process.env.APIKEY;
@@ -12,6 +14,11 @@ const uri = mongoUrl;
 const dbName = 'DCB_Audio';
 const client = new MongoClient(uri, { useNewUrlParser: true, useUnifiedTopology: true });
 const db = client.db(dbName);
+
+const openai = new OpenAI({
+  apiKey:process.env.OPEN_API_KEY,
+});
+
 
 
 export const Transcript = async (req, res) => {
@@ -317,11 +324,126 @@ console.log("callRecordings:::::",callRecordings)
   }
 }
 
+// export const Promtstatustranscript = async (req, res) => {
+//   const collectionName = 'twilio_recordings';
+
+//   // API Endpoint
+//   const apiEndpoint = 'http://localhost:8003/wrapper/transcript';
+
+//   // Account SID and Auth Token
+//    const accountSid = process.env.TWILIO_ACCOUNT_SID;
+
+//   const authToken = process.env.TWILIO_AUTH_TOKEN;
+
+//   // Function to convert media URL
+//   function convertMediaUrl(mediaUrl) {
+//     if (!mediaUrl) {
+//       console.error('Media URL is undefined or null');
+//       return null;
+//     }
+//     return `https://${accountSid}:${authToken}@${mediaUrl.substring(8)}`;
+
+//   }
+
+//   console.log('Connected to MongoDB successfully');
+
+//   const db = client.db(dbName);
+//   const collection = db.collection("recordings_rows");
+//   const transcriptCollection = db.collection("transcript");
+//   try {
+//     // Fetch Twilio recordings from MongoDB
+//     // Iterate over each recording
+//     async function processRecording(recording) {
+//       try {
+//         // Check if transcript exists for the recording
+//         const transcript = await transcriptCollection.findOne({
+//           call_sid: recording.sid,
+//           transcription: ""
+//         });
+
+//         // console.log(transcript)
+//         if (transcript) {
+//           console.log('Transcript not found for call SID:', recording.sid);
+//           if(recording.media_url){
+//             console.log(recording.media_url)
+//             const convertedMediaUrl = convertMediaUrl(recording.media_url);
+
+
+
+
+//             const apiResponse = await axios.get(apiEndpoint, {
+//               params: {
+//                 call_sid: recording.sid,
+//                 audioPath: convertedMediaUrl,
+//                 from: recording.from,
+//                 to: recording.to,
+//                 start_time: recording.start_time
+//               }
+//             });
+  
+//             // Assuming apiResponse.data contains the transcript data
+//             console.log('Transcript fetched for call SID:', recording.sid);
+//             return apiResponse.data;
+//           }else{
+//             const apiResponse = await axios.get(apiEndpoint, {
+//               params: {
+//                 call_sid: recording.sid,
+//                 audioPath: "--",
+//                 from: recording.from,
+//                 to: recording.to,
+//                 start_time: recording.start_time
+//               }
+//             });
+//             return apiResponse.data;
+//           }
+       
+//         } else {
+//           console.log('Transcript already exists for call SID:', recording.sid);
+//           return null; // Return null as transcript already exists
+//         }
+//       } catch (error) {
+//         console.error('Error processing recording:', error.response ? error.response.data : error.message);
+//         return null;
+//       }
+//     }
+//     // const twilioRecordings = await collection.find().toArray();
+//     // const phoneNumbers = [ '+13462751361','+13464366617',
+//     //   '+13462755401'];
+//     const phoneNumbers = ["+19803516616",
+//       "+19803516969",
+//       "+19803516959",
+//       "+19803516979"];
+    
+//     const twilioRecordings = await collection.find({
+//       $or: [
+//         { to: { $in: phoneNumbers } },
+//         { from: { $in: phoneNumbers } }
+//       ]
+//     }).toArray();
+
+//     // Iterate over each recording, process it, and update transcript if necessary
+//     for (const recording of twilioRecordings) {
+//       if(recording.sid){
+//       const transcriptData = await processRecording(recording);
+//       }
+//       // if (transcriptData !== null) {
+
+//       //     await recordingsCollection.updateOne({ _id: recording._id }, { $set: { transcript: transcriptData } });
+//       // }
+//     }
+
+//     res.end("success")
+//   } catch (error) {
+//     console.error('Error fetching Twilio recordings from MongoDB:', error);
+//   }
+// }
+
+
 export const Promtstatustranscript = async (req, res) => {
   const collectionName = 'twilio_recordings';
 
   // API Endpoint
-  const apiEndpoint = 'http://localhost:8003/wrapper/transcript';
+  const apiEndpoint = 'https://audiology-backend.onrender.com3/wrapper/transcript';
 
   // Account SID and Auth Token
    const accountSid = process.env.TWILIO_ACCOUNT_SID;
@@ -357,39 +479,37 @@ export const Promtstatustranscript = async (req, res) => {
         // console.log(transcript)
         if (transcript) {
           console.log('Transcript not found for call SID:', recording.sid);
-          if(recording.media_url){
-            console.log(recording.media_url)
-            const convertedMediaUrl = convertMediaUrl(recording.media_url);
+          const convertedMediaUrl = convertMediaUrl(recording.media_url);
 
 
+          const apiResponse = await axios.get(apiEndpoint, {
+            params: {
+              call_sid: recording.sid,
+              audioPath: convertedMediaUrl,
+              from: recording.from,
+              to: recording.to,
+              start_time: recording.start_time
+            }
+          });
+          const extractedres=JSON.parse(apiResponse.data.transcripe_data)
 
+                const transcriptText = extractedres.text;
 
-            const apiResponse = await axios.get(apiEndpoint, {
-              params: {
-                call_sid: recording.sid,
-                audioPath: convertedMediaUrl,
-                from: recording.from,
-                to: recording.to,
-                start_time: recording.start_time
-              }
-            });
-  
-            // Assuming apiResponse.data contains the transcript data
-            console.log('Transcript fetched for call SID:', recording.sid);
-            return apiResponse.data;
-          }else{
-            const apiResponse = await axios.get(apiEndpoint, {
-              params: {
-                call_sid: recording.sid,
-                audioPath: "--",
-                from: recording.from,
-                to: recording.to,
-                start_time: recording.start_time
-              }
-            });
-            return apiResponse.data;
-          }
-       
+                // Call OpenAI API to analyze the transcript
+                // const openaiResponse = await analyzeTranscript(transcriptText);
+    
+                // console.log('OpenAI Analysis:', openaiResponse);
+                const openaiResponse = await analyzeTranscript(transcriptText);
+                const analysis = parseOpenAIResponse(openaiResponse);
+
+                console.log('OpenAI Analysis:', analysis);
+
+                const patientStatus=analysis?.patientStatus
+                const patientStatus2=getSeparator(patientStatus)
+
+          // Assuming apiResponse.data contains the transcript data
+          console.log('Transcript fetched for call SID:', recording.sid);
+          return apiResponse.data;
         } else {
           console.log('Transcript already exists for call SID:', recording.sid);
           return null; // Return null as transcript already exists
@@ -400,8 +520,6 @@ export const Promtstatustranscript = async (req, res) => {
       }
     }
     // const twilioRecordings = await collection.find().toArray();
-    // const phoneNumbers = [ '+13462751361','+13464366617',
-    //   '+13462755401'];
     const phoneNumbers = ["+19803516616",
       "+19803516969",
       "+19803516959",
@@ -413,12 +531,11 @@ export const Promtstatustranscript = async (req, res) => {
         { from: { $in: phoneNumbers } }
       ]
     }).toArray();
+    
 
     // Iterate over each recording, process it, and update transcript if necessary
     for (const recording of twilioRecordings) {
-      if(recording.sid){
       const transcriptData = await processRecording(recording);
-      }
       // if (transcriptData !== null) {
 
       //     await recordingsCollection.updateOne({ _id: recording._id }, { $set: { transcript: transcriptData } });
@@ -429,6 +546,83 @@ export const Promtstatustranscript = async (req, res) => {
   } catch (error) {
     console.error('Error fetching Twilio recordings from MongoDB:', error);
   }
+
+  async function analyzeTranscript(transcriptText) {
+    try {
+        const response = await axios.post('https://api.openai.com/v1/chat/completions', {
+            model: 'gpt-3.5-turbo', // or 'gpt-4' if available
+            messages: [
+                {
+                    role: 'system',
+                    content: 'You are an expert in analyzing medical transcripts.'
+                },
+                {
+                    role: 'user',
+                content: `Based on the following medical transcript:
+                "${transcriptText}"
+                Answer the questions as follows:
+                1. Patient status: Provide one word - "old", "new", or "--" if unclear.
+                2. Appointment status: Provide one word - "yes" or "no".
+                3. Action required: Provide one word - "yes" or "no".
+                4. What is the status of the appointment? Provide a complete description.
+                5. Is there any action required for the patient, doctor, or clinic? Provide a complete description.`
+                }
+            ],
+            max_tokens: 2000,
+        }, {
+            headers: {
+                'Authorization': `Bearer sk-proj-Wd846pKPZgMUmVbkn2YGT3BlbkFJNJlYI3wZgokIuHxcT4GD`,
+                'Content-Type': 'application/json'
+            }
+        });
+
+        const openaiAnalysis = response.data.choices[0].message.content.trim();
+        return openaiAnalysis;
+
+    } catch (error) {
+        console.error('Error processing text with OpenAI:', error.message);
+        throw error;
+    }
+}
+
+function parseOpenAIResponse(response) {
+    // Split the response into lines
+    const lines = response.split('\n').map(line => line.trim()).filter(line => line.length > 0);
+    // console.log(lines?.length)
+    const analysis = {
+        patientStatus: '--',
+        appointmentStatus: 'no',
+        actionRequired: 'no',
+        appointmentStatusDescription: 'Not available',
+        actionRequiredDescription: 'Not available'
+    };
+
+    // Ensure we have at least 5 lines
+    if (lines.length >= 5) {
+        analysis.patientStatus = extractValue(lines[0]);
+        analysis.appointmentStatus = extractValue(lines[1]);
+        analysis.actionRequired = extractValue(lines[2]);
+        analysis.appointmentStatusDescription = extractValue(lines[3]);
+        analysis.actionRequiredDescription = extractValue(lines[4]);
+    }
+
+    return analysis;
+}
+
+function extractValue(line) {
+
+    const parts = line.split(':');
+    // console.log(parts)
+    // console.log(parts.length > 1 ? parts[1].trim() : '')
+    return parts;
+}
+
+function getSeparator(arr) {
+    if (arr.length > 1) {
+        return arr[1].trim(); // Access the second element and trim any extra whitespace
+    }
+    return null;
+}
 }
 
 export const Promtstatus = async (req, res) => {
