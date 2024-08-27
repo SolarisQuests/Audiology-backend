@@ -27,7 +27,7 @@ app.use(cors())
 
 app.use("/wrapper", wrapperroute);
 
-const baseURL = 'http://localhost:8003/wrapper'; 
+const baseURL = 'https://audiology-backend.onrender.com3/wrapper'; 
 
 const callPromptEndpoint = async () => {
   try {
