@@ -571,7 +571,7 @@ export const Promtstatustranscript = async (req, res) => {
             max_tokens: 2000,
         }, {
             headers: {
-                'Authorization': `Bearer sk-proj-Wd846pKPZgMUmVbkn2YGT3BlbkFJNJlYI3wZgokIuHxcT4GD`,
+                'Authorization': `Bearer ${process.env.OPEN_API_KEY}`,
                 'Content-Type': 'application/json'
             }
         });
